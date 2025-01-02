@@ -1,0 +1,18 @@
+# frontend/static/css/styles.css
+.card {
+    margin: 1rem 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.chart-container {
+    height: 400px;
+    width: 100%;
+}
+
+.control-panel {
+    padding: 1rem;
+}
+
+.form-select {
+    margin-bottom: 1rem;
+}
