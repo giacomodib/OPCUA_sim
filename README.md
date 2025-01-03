@@ -1,22 +1,17 @@
 # OPCUA_sim
+Simulator for an industrial saw that uses the OPC UA protocol for communication between the backend and an external Edge device. This project aims to create a realistic simulation for testing, performance analysis, and training.
 
-## ToDo list:
+---
 
-## Backend
+## **To-Do List:**
 
-### Gestione degli allarmi e errori:
-Simulare delle anomalie di processo (es. temperatura della lama troppo elevata, consumo energetico, barriera di sicurezza non presente, ...) o anomalie nella comunicazione dei dati con il dispositivo Edge (Messaggio di errore / valori tutti nulli o NaN)
+### **Backend**
+- Simulate realistic alarms with tangible impacts on the simulation.
 
-### Sistemare valori relativi al consumo di energia
-
-## Frontend
-...
-
---- 
-## Altro...
-- Conteggio dei pezzi scarto
-- Calcolo OEE
-- Possibilità di taglio angolato (0°, 45°, 60°)
-- Possibilità di scegliere il tipo di sezione del materiale
-- Rodaggio della lama
-- Possibilità di scegliere velocità di taglio e avanzamento 
+### **Additional Features**
+- **Scrap piece counting**: Implement a system to track and record the number of scrap pieces during the cutting process.  
+- **OEE (Overall Equipment Effectiveness) calculation**: Provide an indicator of the machine's overall performance based on availability, performance, and quality.  
+- **Angled cutting capability**: Enable material cutting at predefined angles (0°, 45°, 60°).  
+- **Material section type selection**: Add options to choose the material's section type (e.g., round, square, rectangular).  
+- **Blade break-in**: Simulate the blade break-in process to ensure optimal performance and increased durability.  
+- **Customization of cutting parameters**: Allow users to select cutting speed and feed rate to optimize the process based on the material and specific requirements.  
