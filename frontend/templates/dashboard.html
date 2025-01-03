@@ -11,7 +11,7 @@
 <body>
     <div class="container-fluid">
         <div class="row">
-            <!-- Material Selection and Info Panel -->
+            <!-- Control Panel -->
             <div class="col-md-3">
                 <div class="card mb-3">
                     <div class="card-body">
@@ -22,7 +22,6 @@
                                 <option value="in funzione">In funzione</option>
                                 <option value="inattiva">Inattiva</option>
                                 <option value="in pausa">In pausa</option>
-                                <option value="allarme">Allarme</option>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -47,24 +46,26 @@
 
                 <div class="card mb-3">
                     <div class="card-body">
-                        <h5>Dati Materiale</h5>
-                        <div class="material-info">
-                            <p><strong>Carico di strappamento:</strong> <span id="tensileStrength">0</span> MPa</p>
-                            <p><strong>Velocità di taglio:</strong> <span id="cuttingSpeed">0</span> m/min</p>
-                            <p><strong>Avanzamento:</strong> <span id="feedRate">0</span> mm/s</p>
-                            <p><strong>Numero pezzi:</strong> <span id="pieces">0</span></p>
+                        <h5>Gestione Allarmi</h5>
+                        <div class="mb-3">
+                            <label for="alarmSelect" class="form-label">Tipo di Allarme</label>
+                            <select id="alarmSelect" class="form-select">
+                                <option value="nessun allarme">Nessun Allarme</option>
+                                <option value="temperatura alta">Temperatura Alta</option>
+                                <option value="consumo eccessivo">Consumo Eccessivo</option>
+                                <option value="errore sensore">Errore Sensore</option>
+                            </select>
                         </div>
+                        <button id="setAlarmButton" class="btn btn-danger">Invia Allarme</button>
                     </div>
                 </div>
 
-                <div class="card">
+                <div class="card mb-3">
                     <div class="card-body">
-                        <h5>Monitoraggio</h5>
-                        <select id="chartSelect" class="form-select">
-                            <option value="temperature">Temperatura</option>
-                            <option value="consumption">Consumo Energetico</option>
-                            <option value="pieces">Conteggio Pezzi</option>
-                        </select>
+                        <h5>Dati Materiale</h5>
+                        <p><strong>Velocità di taglio:</strong> <span id="cuttingSpeed">0</span> m/min</p>
+                        <p><strong>Avanzamento:</strong> <span id="feedRate">0</span> mm/s</p>
+                        <p><strong>Numero pezzi:</strong> <span id="pieces">0</span></p>
                     </div>
                 </div>
             </div>

@@ -2,7 +2,7 @@ from enum import Enum
 import random
 from datetime import datetime
 
-
+# Enum per gli stati della macchina
 class MachineState(Enum):
     INACTIVE = "inattiva"
     RUNNING = "in funzione"
@@ -11,7 +11,7 @@ class MachineState(Enum):
     PAUSED = "in pausa"
     EMERGENCY_STOP = "arresto emergenza"
 
-
+# Enum per i tipi di allarmi
 class AlarmType(Enum):
     NONE = "nessun allarme"
     HIGH_TEMPERATURE = "temperatura elevata"
@@ -21,7 +21,7 @@ class AlarmType(Enum):
     LOW_COOLANT = "livello refrigerante basso"
     MOTOR_OVERLOAD = "sovraccarico motore"
 
-
+# Dati dei materiali
 materials_data = {
     "Acciai al carbonio St 37/42": {
         "tensile_strength": 400,
@@ -80,6 +80,7 @@ materials_data = {
     }
 }
 
+# Funzioni di calcolo
 
 def calculate_cutting_speed(material, section):
     if material in materials_data and section in materials_data[material]["cutting_speeds"]:
@@ -87,13 +88,11 @@ def calculate_cutting_speed(material, section):
         return (min_speed + max_speed) / 2
     return 0
 
-
 def calculate_feed_rate(material, section):
     if material in materials_data and section in materials_data[material]["feed_rates"]:
         min_rate, max_rate = materials_data[material]["feed_rates"][section]
         return (min_rate + max_rate) / 2
     return 0.0
-
 
 def calculate_power(material, cutting_speed, feed_rate):
     BLADE_THICKNESS = 0.9
@@ -111,14 +110,14 @@ def calculate_power(material, cutting_speed, feed_rate):
 
     return actual_power * 1000
 
-
+# Simulatore della sega a nastro
 class BandSawSimulator:
     def __init__(self):
         self.state = MachineState.INACTIVE
         self.pieces = 0
         self.next_pause_at = 15
         self.consumption = 0  # consumo energia
-        self.MAX_POWER = 2200.0 # potenza massima motore
+        self.MAX_POWER = 2200.0  # potenza massima motore
         self.error_probability = 0.001
         self.material = "Acciai al carbonio St 37/42"
         self.section = "<100mm"
@@ -186,3 +185,18 @@ class BandSawSimulator:
 
         self.update_temperature()
         self.update_consumption()
+
+    def high_temperature_alarm(self):
+        return self.temperature > self.TEMP_CRITICAL
+
+    def low_coolant_alarm(self):
+        return self.temperature < self.TEMP_NORMAL_MIN
+
+    def communication_error_alarm(self):
+        return random.random() < self.error_probability
+
+    def blade_break_error(self):
+        return random.random() < 0.005
+
+    def motor_overload(self):
+        return self.consumption > self.MAX_POWER

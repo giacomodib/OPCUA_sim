@@ -20,14 +20,14 @@ async def main():
 
     simulator = BandSawSimulator()
 
-    state_var = await machine.add_variable(idx, "State", "inattiva", ua.VariantType.String)
+    state_var = await machine.add_variable(idx, "State", simulator.state.value, ua.VariantType.String)
     speed_var = await machine.add_variable(idx, "CuttingSpeed", simulator.cutting_speed, ua.VariantType.Double)
     feed_rate_var = await machine.add_variable(idx, "FeedRate", simulator.feed_rate, ua.VariantType.Double)
-    pieces_var = await machine.add_variable(idx, "Pieces", 0, ua.VariantType.Int64)
-    consumption_var = await machine.add_variable(idx, "Consumption", 1000.0, ua.VariantType.Double)
+    pieces_var = await machine.add_variable(idx, "Pieces", simulator.pieces, ua.VariantType.Int64)
+    consumption_var = await machine.add_variable(idx, "Consumption", simulator.consumption, ua.VariantType.Double)
     material_var = await machine.add_variable(idx, "Material", simulator.material, ua.VariantType.String)
     section_var = await machine.add_variable(idx, "Section", simulator.section, ua.VariantType.String)
-    temp_var = await machine.add_variable(idx, "Temperature", 20.0, ua.VariantType.Double)
+    temp_var = await machine.add_variable(idx, "Temperature", simulator.temperature, ua.VariantType.Double)
 
     for var in [state_var, speed_var, feed_rate_var, pieces_var, consumption_var, material_var, section_var, temp_var]:
         await var.set_writable()
@@ -37,15 +37,17 @@ async def main():
     try:
         async with server:
             while True:
+                # Gestione aggiornamento stato macchina
                 new_state = await state_var.get_value()
                 if new_state != simulator.state.value:
                     try:
-                        simulator.state = MachineState(new_state)
+                        simulator.state = MachineState[new_state.upper()]
                         simulator.last_state_change = datetime.now()
                         print(f"Stato cambiato esternamente a: {new_state}")
-                    except ValueError:
+                    except KeyError:
                         print(f"Stato non valido ricevuto: {new_state}")
 
+                # Aggiornamento materiale e sezione
                 new_material = await material_var.get_value()
                 new_section = await section_var.get_value()
                 if new_material != simulator.material or new_section != simulator.section:
@@ -54,16 +56,18 @@ async def main():
                     simulator.cutting_speed = calculate_cutting_speed(simulator.material, simulator.section)
                     simulator.feed_rate = calculate_feed_rate(simulator.material, simulator.section)
 
+                # Aggiorna stato simulatore
                 simulator.update_state()
 
+                # Scrittura valori aggiornati nel server OPC-UA
                 await state_var.write_value(simulator.state.value)
-                await speed_var.write_value(float(simulator.cutting_speed))
-                await feed_rate_var.write_value(float(simulator.feed_rate))
-                await pieces_var.write_value(int(simulator.pieces))
-                await consumption_var.write_value(float(simulator.consumption))
+                await speed_var.write_value(simulator.cutting_speed)
+                await feed_rate_var.write_value(simulator.feed_rate)
+                await pieces_var.write_value(simulator.pieces)
+                await consumption_var.write_value(simulator.consumption)
                 await material_var.write_value(simulator.material)
                 await section_var.write_value(simulator.section)
-                await temp_var.write_value(float(simulator.temperature))
+                await temp_var.write_value(simulator.temperature)
 
                 await asyncio.sleep(1)
 
