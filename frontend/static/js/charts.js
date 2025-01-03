@@ -43,11 +43,14 @@ function updateChart(newValue) {
     chart.update('none');
 }
 
-function updateMaterialInfo(data) {
-    document.getElementById('tensileStrength').textContent = data.tensile_strength || '0';
+function updateMachineStatus(data) {
+    // Update machine info
     document.getElementById('cuttingSpeed').textContent = data.cutting_speed?.toFixed(1) || '0';
     document.getElementById('feedRate').textContent = data.feed_rate?.toFixed(3) || '0';
     document.getElementById('pieces').textContent = data.pieces || '0';
+    document.getElementById('tensileStrength').textContent = data.tensile_strength || '0';
+    document.getElementById('bladeWear').textContent = (data.blade_wear || 0).toFixed(1);
+    document.getElementById('coolantLevel').textContent = (data.coolant_level || 0).toFixed(1);
 }
 
 function updateAlarmStatus(data) {
@@ -55,184 +58,106 @@ function updateAlarmStatus(data) {
     const alarmMessageElement = document.getElementById('alarmMessage');
 
     if (data.state === 'allarme') {
-        alarmStatusElement.className = 'alarm-active';
-        // Traduciamo il messaggio di allarme per la visualizzazione
-        let alarmMessage = 'Sconosciuto';
-        switch(data.alarm_type) {
-            case 'temperatura elevata':
-                alarmMessage = 'Temperatura elevata';
-                break;
-            case 'consumo elevato':
-                alarmMessage = 'Consumo elevato';
-                break;
-            case 'barriera di sicurezza':
-                alarmMessage = 'Barriera di sicurezza';
-                break;
-            case 'errore connessione':
-                alarmMessage = 'Errore di connessione';
-                break;
-            case 'nessun allarme':
-                alarmMessage = 'Nessun allarme';
-                break;
-        }
-        alarmMessageElement.textContent = `Allarme: ${alarmMessage}`;
+        alarmStatusElement.className = 'alert alert-danger';
+        let alarmMessage = data.alarm_type || 'Unknown';
+        alarmMessageElement.textContent = `Alarm: ${alarmMessage}`;
         alarmMessageElement.style.display = 'block';
     } else if (data.state === 'errore') {
-        alarmStatusElement.className = 'error-active';
-        alarmMessageElement.textContent = `Errore: ${data.alarm_type || 'Sconosciuto'}`;
+        alarmStatusElement.className = 'alert alert-warning';
+        alarmMessageElement.textContent = `Error: ${data.alarm_type || 'Unknown'}`;
         alarmMessageElement.style.display = 'block';
     } else {
-        alarmStatusElement.className = 'no-alarm';
+        alarmStatusElement.className = 'alert alert-success';
+        alarmStatusElement.textContent = 'System Operational';
         alarmMessageElement.style.display = 'none';
     }
 }
 
 function fetchData() {
-    fetch('/api/data')
+    fetch('/api/machine_status')
         .then(response => response.json())
         .then(data => {
             if (data) {
-                updateChart(data[selectedMetric]);
-                updateMaterialInfo(data);
-                updateAlarmStatus(data);
+                // updates
+                updateChart(data.temperature);
+                updateMachineStatus(data);
+                updateAlarmStatus(data);      
+
                 document.getElementById('stateSelect').value = data.state;
                 document.getElementById('materialSelect').value = data.material;
                 document.getElementById('sectionSelect').value = data.section;
             }
         })
-        .catch(error => console.error('Error fetching data:', error));
+        .catch(error => console.error('Errore durante il recupero dei dati:', error));
 }
-
-function updateMaterialSettings(material) {
-    fetch('/api/set_material', {
+function updateMachineSettings(endpoint, data) {
+    fetch(`/api/${endpoint}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-            material: material
-        })
+        body: JSON.stringify(data)
     })
-    .catch(error => console.error('Error setting material:', error));
-}
-
-function updateSectionSettings(section) {
-    fetch('/api/set_section', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            section: section
-        })
-    })
-    .catch(error => console.error('Error setting section:', error));
-}
-
-function setAlarm(alarmType) {
-    fetch('/api/set_alarm', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            alarm: alarmType
-        })
-    })
-    .catch(error => console.error('Error setting alarm:', error));
-}
-
-function resetAlarm() {
-    fetch('/api/reset_alarm', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            alarm: 'nessun allarme'
-        })
-    })
-    .catch(error => console.error('Error resetting alarm:', error));
+    .catch(error => console.error(`Error updating ${endpoint}:`, error));
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Inizializza le opzioni del select degli allarmi
-    const alarmSelect = document.getElementById('alarmSelect');
-    if (alarmSelect) {
-        alarmSelect.innerHTML = `
-            <option value="temperatura elevata">Temperatura Elevata</option>
-            <option value="consumo elevato">Consumo Elevato</option>
-            <option value="barriera di sicurezza">Barriera di Sicurezza</option>
-            <option value="errore connessione">Errore di Connessione</option>
-        `;
-    }
-
     initChart();
 
+    // Start data polling
     setTimeout(() => {
         fetchData();
         setInterval(fetchData, 1000);
     }, 1000);
 
+    // Chart metric selection
     document.getElementById('chartSelect').addEventListener('change', function(e) {
         selectedMetric = e.target.value;
         data.datasets[0].data = [];
         data.labels = [];
 
         const labels = {
-            'temperature': 'Temperatura (°C)',
-            'consumption': 'Consumo Energetico (W)',
-            'pieces': 'Conteggio Pezzi'
+            'temperature': 'Temperature (°C)',
+            'consumption': 'Power Consumption (W)',
+            'blade_wear': 'Blade Wear (%)',
+            'coolant_level': 'Coolant Level (%)'
         };
 
         data.datasets[0].label = labels[selectedMetric];
         chart.update();
     });
 
+    // Machine state control
     document.getElementById('stateSelect').addEventListener('change', function(e) {
-        fetch('/api/set_state', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                state: e.target.value
-            })
-        })
-        .catch(error => console.error('Error setting state:', error));
+        updateMachineSettings('set_state', { state: e.target.value });
     });
 
-    // Gestione degli allarmi
+    // Material settings
+    document.getElementById('materialSelect').addEventListener('change', function(e) {
+        updateMachineSettings('set_material', { material: e.target.value });
+    });
+
+    // Section settings
+    document.getElementById('sectionSelect').addEventListener('change', function(e) {
+        updateMachineSettings('set_section', { section: e.target.value });
+    });
+
+    // Alarm controls
     document.getElementById('setAlarmButton')?.addEventListener('click', function() {
         const alarmType = document.getElementById('alarmSelect').value;
-        setAlarm(alarmType);
+        updateMachineSettings('set_alarm', { alarm: alarmType });
     });
 
     document.getElementById('resetAlarmButton')?.addEventListener('click', function() {
-        resetAlarm();
+        updateMachineSettings('reset_alarm', {});
     });
 
+    // Safety barrier toggle
     document.getElementById('safetyBarrierToggle')?.addEventListener('change', function(e) {
         if (e.target.checked) {
-            setAlarm('barriera di sicurezza');
+            updateMachineSettings('set_alarm', { alarm: 'SAFETY_BARRIER' });
         } else {
-            resetAlarm();
+            updateMachineSettings('reset_alarm', {});
         }
     });
-
-    const materialSelect = document.getElementById('materialSelect');
-    const sectionSelect = document.getElementById('sectionSelect');
-
-    function handleMaterialChange() {
-        const material = materialSelect.value;
-        updateMaterialSettings(material);
-    }
-
-    function handleSectionChange() {
-        const section = sectionSelect.value;
-        updateSectionSettings(section);
-    }
-
-    materialSelect.addEventListener('change', handleMaterialChange);
-    sectionSelect.addEventListener('change', handleSectionChange);
 });

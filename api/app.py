@@ -10,10 +10,6 @@ app = Flask(__name__,
 
 client = OPCUAClient()
 
-# Configura il logging
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)  # Mostrerà solo gli errori, non le richieste normali
-
 @app.route('/')
 def index():
     return render_template('dashboard.html')
@@ -24,33 +20,18 @@ def get_data():
     def async_get_data():
         async def fetch():
             try:
-                state = await client.get_node_value("ns=2;i=2")
-                cutting_speed = await client.get_node_value("ns=2;i=3")
-                feed_rate = await client.get_node_value("ns=2;i=4")
-                pieces = await client.get_node_value("ns=2;i=5")
-                consumption = await client.get_node_value("ns=2;i=6")
-                material = await client.get_node_value("ns=2;i=7")
-                section = await client.get_node_value("ns=2;i=8")
-                temperature = await client.get_node_value("ns=2;i=9")
-                alarm_type = await client.get_node_value("ns=2;i=10")
-
-
-                # Get material data from materials_data dictionary
-                material_info = materials_data.get(material, {})
-                tensile_strength = material_info.get('tensile_strength', 0)
-
+                status = await client.get_machine_status()
                 return {
-                    'state': state if state is not None else 'inattiva',
-                    'cutting_speed': float(cutting_speed) if cutting_speed is not None else 0,
-                    'feed_rate': float(feed_rate) if feed_rate is not None else 0,
-                    'pieces': int(pieces) if pieces is not None else 0,
-                    'consumption': float(consumption) if consumption is not None else 0,
-                    'material': material,
-                    'section': section,
-                    'temperature': float(temperature) if temperature is not None else 0,
-                    'tensile_strength': tensile_strength,
-                    'alarm_type': alarm_type if alarm_type is not None else AlarmType.NONE.value
-
+                    'state': status.get('state', 'inattiva'),
+                    'cutting_speed': float(status.get('cutting_speed', 0)),
+                    'feed_rate': float(status.get('feed_rate', 0)),
+                    'pieces': int(status.get('pieces', 0)),
+                    'consumption': float(status.get('power_consumption', 0)),
+                    'material': 'Acciai al carbonio St 37/42',  # Replace with actual material logic
+                    'section': '<100mm',  # Replace with actual section logic
+                    'temperature': float(status.get('temperature', 0)),
+                    'tensile_strength': 400,  # Replace with actual material logic
+                    'alarm_type': status.get('alarm_type', AlarmType.NONE.value)
                 }
             except Exception as e:
                 print(f"Error fetching data: {e}")
@@ -64,12 +45,13 @@ def get_data():
                     'section': '',
                     'temperature': 0,
                     'tensile_strength': 0,
-                    'alarm_type':''
+                    'alarm_type': ''
                 }
 
         return client.run_async(fetch())
 
     return jsonify(async_get_data())
+
 
 
 @app.route('/api/set_state', methods=['POST'])
@@ -142,3 +124,12 @@ def reset_alarm():
 
     success = async_reset_alarm()
     return jsonify({'success': success})
+
+@app.route('/api/machine_status', methods=['GET'])
+def machine_status():
+    try:
+        status = client.run_async(client.get_machine_status())
+        return jsonify(status)
+    except Exception as e:
+        logging.error(f"Errore durante il recupero dello stato macchina: {e}")
+        return jsonify({'error': 'Impossibile recuperare lo stato della macchina'}), 500

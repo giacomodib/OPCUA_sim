@@ -13,41 +13,45 @@
         <div class="row">
             <!-- Control Panel -->
             <div class="col-md-3">
-                <!-- Alarm Status Card -->
+                <!-- Machine Status Card -->
                 <div class="card mb-3">
                     <div class="card-body">
-                        <h5>Stato Sistema</h5>
-                        <div id="alarmStatus" class="alert no-alarm mb-2">
-                            Sistema operativo
+                        <h5>System Status</h5>
+                        <div id="alarmStatus" class="alert alert-success mb-2">
+                            System Operational
                         </div>
                         <div id="alarmMessage" class="alert alert-danger" style="display: none;">
                         </div>
                     </div>
                 </div>
 
+                <!-- Machine Control Card -->
                 <div class="card mb-3">
                     <div class="card-body">
-                        <h5>Controllo Macchina</h5>
+                        <h5>Machine Control</h5>
                         <div class="mb-3">
-                            <label for="stateSelect" class="form-label">Stato Macchina</label>
+                            <label for="stateSelect" class="form-label">Machine State</label>
                             <select id="stateSelect" class="form-select">
-                                <option value="in funzione">In funzione</option>
-                                <option value="inattiva">Inattiva</option>
-                                <option value="in pausa">In pausa</option>
+                                <option value="RUNNING">Running</option>
+                                <option value="INACTIVE">Inactive</option>
+                                <option value="PAUSED">Paused</option>
+                                <option value="ERROR">Error</option>
+                                <option value="EMERGENCY_STOP">Emergency Stop</option>
+                                <option value="BREAK_IN">Break In</option>
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="materialSelect" class="form-label">Materiale</label>
+                            <label for="materialSelect" class="form-label">Material</label>
                             <select id="materialSelect" class="form-select">
-                                <option value="Acciai al carbonio St 37/42">Acciai al carbonio St 37/42</option>
-                                <option value="Acciai da cementazione C10/C15">Acciai da cementazione C10/C15</option>
-                                <option value="Ghisa GG30">Ghisa GG30</option>
-                                <option value="Alluminio 6003">Alluminio 6003</option>
-                                <option value="Leghe al nichel NiCr 19 NbMc">Leghe al nichel NiCr 19 NbMc</option>
+                                <option value="Acciai al carbonio St 37/42">Carbon Steel St 37/42</option>
+                                <option value="Acciai da cementazione C10/C15">Case Hardening Steel C10/C15</option>
+                                <option value="Ghisa GG30">Cast Iron GG30</option>
+                                <option value="Alluminio 6003">Aluminum 6003</option>
+                                <option value="Leghe al nichel NiCr 19 NbMc">Nickel Alloy NiCr 19 NbMc</option>
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="sectionSelect" class="form-label">Sezione</label>
+                            <label for="sectionSelect" class="form-label">Section</label>
                             <select id="sectionSelect" class="form-select">
                                 <option value="<100mm">&lt;100mm</option>
                                 <option value="100-400mm">100-400mm</option>
@@ -59,38 +63,44 @@
                 <!-- Safety and Alarms Card -->
                 <div class="card mb-3">
                     <div class="card-body">
-                        <h5>Sicurezza e Allarmi</h5>
+                        <h5>Safety and Alarms</h5>
                         <div class="mb-3">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="safetyBarrierToggle">
                                 <label class="form-check-label" for="safetyBarrierToggle">
-                                    Barriere di Protezione
+                                    Safety Barriers
                                 </label>
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label for="alarmSelect" class="form-label">Tipo di Allarme</label>
+                            <label for="alarmSelect" class="form-label">Alarm Type</label>
                             <select id="alarmSelect" class="form-select">
-                                <option value="temperatura elevata">Temperatura Elevata</option>
-                                <option value="consumo elevato">Consumo Elevato</option>
-                                <option value="barriera di sicurezza">Barriere di Protezione</option>
-                                <option value="errore connessione">Errore di Connessione</option>
+                                <option value="HIGH_TEMPERATURE">High Temperature</option>
+                                <option value="HIGH_POWER">High Power Consumption</option>
+                                <option value="SAFETY_BARRIER">Safety Barrier</option>
+                                <option value="CONNECTION_ERROR">Connection Error</option>
+                                <option value="BLADE_WEAR">Blade Wear</option>
+                                <option value="COOLANT_LOW">Low Coolant</option>
+                                <option value="MATERIAL_JAM">Material Jam</option>
                             </select>
                         </div>
                         <div class="d-grid gap-2">
-                            <button id="setAlarmButton" class="btn btn-danger">Simula Allarme</button>
-                            <button id="resetAlarmButton" class="btn btn-success">Reset Allarme</button>
+                            <button id="setAlarmButton" class="btn btn-danger">Simulate Alarm</button>
+                            <button id="resetAlarmButton" class="btn btn-success">Reset Alarm</button>
                         </div>
                     </div>
                 </div>
 
+                <!-- Machine Data Card -->
                 <div class="card mb-3">
                     <div class="card-body">
-                        <h5>Dati Materiale</h5>
-                        <p><strong>Velocità di taglio:</strong> <span id="cuttingSpeed">0</span> m/min</p>
-                        <p><strong>Avanzamento:</strong> <span id="feedRate">0</span> mm/s</p>
-                        <p><strong>Numero pezzi:</strong> <span id="pieces">0</span></p>
-                        <p><strong>Resistenza alla trazione:</strong> <span id="tensileStrength">0</span> N/mm²</p>
+                        <h5>Machine Data</h5>
+                        <p><strong>Cutting Speed:</strong> <span id="cuttingSpeed">0</span> m/min</p>
+                        <p><strong>Feed Rate:</strong> <span id="feedRate">0</span> mm/s</p>
+                        <p><strong>Pieces Completed:</strong> <span id="pieces">0</span></p>
+                        <p><strong>Tensile Strength:</strong> <span id="tensileStrength">0</span> N/mm²</p>
+                        <p><strong>Blade Wear:</strong> <span id="bladeWear">0</span>%</p>
+                        <p><strong>Coolant Level:</strong> <span id="coolantLevel">0</span>%</p>
                     </div>
                 </div>
             </div>
@@ -100,11 +110,12 @@
                 <div class="card">
                     <div class="card-body">
                         <div class="mb-3">
-                            <label for="chartSelect" class="form-label">Metrica</label>
+                            <label for="chartSelect" class="form-label">Metric</label>
                             <select id="chartSelect" class="form-select">
-                                <option value="temperature">Temperatura</option>
-                                <option value="consumption">Consumo Energetico</option>
-                                <option value="pieces">Conteggio Pezzi</option>
+                                <option value="temperature">Temperature</option>
+                                <option value="consumption">Power Consumption</option>
+                                <option value="blade_wear">Blade Wear</option>
+                                <option value="coolant_level">Coolant Level</option>
                             </select>
                         </div>
                         <canvas id="monitorChart"></canvas>
