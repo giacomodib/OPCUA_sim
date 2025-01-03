@@ -1,8 +1,7 @@
 let chart;
 let selectedMetric = 'temperature';
 const maxDataPoints = 60;
-
-const data = {
+let data = {
     labels: [],
     datasets: [{
         label: 'Temperature (°C)',
@@ -30,7 +29,7 @@ function initChart() {
 }
 
 function updateChart(newValue) {
-    if (!chart) return;
+    if (chart === undefined) return;
 
     const now = new Date();
     data.labels.push(now.toLocaleTimeString());
@@ -41,27 +40,46 @@ function updateChart(newValue) {
         data.datasets[0].data.shift();
     }
 
-    chart.update();
+    chart.update('none');
 }
 
-function updateMaterialInfo(materialData) {
-    document.getElementById('tensileStrength').textContent = materialData.tensile_strength || '0';
-    document.getElementById('cuttingSpeed').textContent = materialData.cutting_speed?.toFixed(1) || '0';
-    document.getElementById('feedRate').textContent = materialData.feed_rate?.toFixed(3) || '0';
-    document.getElementById('pieces').textContent = materialData.pieces || '0';
+function updateMaterialInfo(data) {
+    document.getElementById('tensileStrength').textContent = data.tensile_strength || '0';
+    document.getElementById('cuttingSpeed').textContent = data.cutting_speed?.toFixed(1) || '0';
+    document.getElementById('feedRate').textContent = data.feed_rate?.toFixed(3) || '0';
+    document.getElementById('pieces').textContent = data.pieces || '0';
 }
 
-function updateAlarmStatus(machineData) {
+function updateAlarmStatus(data) {
     const alarmStatusElement = document.getElementById('alarmStatus');
     const alarmMessageElement = document.getElementById('alarmMessage');
 
-    if (machineData.state === 'allarme') {
+    if (data.state === 'allarme') {
         alarmStatusElement.className = 'alarm-active';
-        alarmMessageElement.textContent = `Allarme: ${machineData.alarm_type || 'Sconosciuto'}`;
+        // Traduciamo il messaggio di allarme per la visualizzazione
+        let alarmMessage = 'Sconosciuto';
+        switch(data.alarm_type) {
+            case 'temperatura elevata':
+                alarmMessage = 'Temperatura elevata';
+                break;
+            case 'consumo elevato':
+                alarmMessage = 'Consumo elevato';
+                break;
+            case 'barriera di sicurezza':
+                alarmMessage = 'Barriera di sicurezza';
+                break;
+            case 'errore connessione':
+                alarmMessage = 'Errore di connessione';
+                break;
+            case 'nessun allarme':
+                alarmMessage = 'Nessun allarme';
+                break;
+        }
+        alarmMessageElement.textContent = `Allarme: ${alarmMessage}`;
         alarmMessageElement.style.display = 'block';
-    } else if (machineData.state === 'errore') {
+    } else if (data.state === 'errore') {
         alarmStatusElement.className = 'error-active';
-        alarmMessageElement.textContent = `Errore: ${machineData.alarm_type || 'Sconosciuto'}`;
+        alarmMessageElement.textContent = `Errore: ${data.alarm_type || 'Sconosciuto'}`;
         alarmMessageElement.style.display = 'block';
     } else {
         alarmStatusElement.className = 'no-alarm';
@@ -85,34 +103,70 @@ function fetchData() {
         .catch(error => console.error('Error fetching data:', error));
 }
 
-function sendPostRequest(url, requestBody) {
-    fetch(url, {
+function updateMaterialSettings(material) {
+    fetch('/api/set_material', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify({
+            material: material
+        })
     })
-    .catch(error => console.error('Error sending data to ' + url, error));
-}
-
-function updateMaterialSettings(material) {
-    sendPostRequest('/api/set_material', { material });
+    .catch(error => console.error('Error setting material:', error));
 }
 
 function updateSectionSettings(section) {
-    sendPostRequest('/api/set_section', { section });
+    fetch('/api/set_section', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            section: section
+        })
+    })
+    .catch(error => console.error('Error setting section:', error));
 }
 
 function setAlarm(alarmType) {
-    sendPostRequest('/api/set_alarm', { alarm: alarmType });
+    fetch('/api/set_alarm', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            alarm: alarmType
+        })
+    })
+    .catch(error => console.error('Error setting alarm:', error));
 }
 
 function resetAlarm() {
-    sendPostRequest('/api/reset_alarm', {});
+    fetch('/api/reset_alarm', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            alarm: 'nessun allarme'
+        })
+    })
+    .catch(error => console.error('Error resetting alarm:', error));
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Inizializza le opzioni del select degli allarmi
+    const alarmSelect = document.getElementById('alarmSelect');
+    if (alarmSelect) {
+        alarmSelect.innerHTML = `
+            <option value="temperatura elevata">Temperatura Elevata</option>
+            <option value="consumo elevato">Consumo Elevato</option>
+            <option value="barriera di sicurezza">Barriera di Sicurezza</option>
+            <option value="errore connessione">Errore di Connessione</option>
+        `;
+    }
+
     initChart();
 
     setTimeout(() => {
@@ -136,10 +190,19 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.getElementById('stateSelect').addEventListener('change', function(e) {
-        sendPostRequest('/api/set_state', { state: e.target.value });
+        fetch('/api/set_state', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                state: e.target.value
+            })
+        })
+        .catch(error => console.error('Error setting state:', error));
     });
 
-    // Allarmi
+    // Gestione degli allarmi
     document.getElementById('setAlarmButton')?.addEventListener('click', function() {
         const alarmType = document.getElementById('alarmSelect').value;
         setAlarm(alarmType);
@@ -149,17 +212,27 @@ document.addEventListener('DOMContentLoaded', function() {
         resetAlarm();
     });
 
-    // Safety barrier toggle
     document.getElementById('safetyBarrierToggle')?.addEventListener('change', function(e) {
-        sendPostRequest('/api/set_safety_barrier', { is_open: e.target.checked });
+        if (e.target.checked) {
+            setAlarm('barriera di sicurezza');
+        } else {
+            resetAlarm();
+        }
     });
 
-    // Material and Section Change Events
-    document.getElementById('materialSelect')?.addEventListener('change', function() {
-        updateMaterialSettings(this.value);
-    });
+    const materialSelect = document.getElementById('materialSelect');
+    const sectionSelect = document.getElementById('sectionSelect');
 
-    document.getElementById('sectionSelect')?.addEventListener('change', function() {
-        updateSectionSettings(this.value);
-    });
+    function handleMaterialChange() {
+        const material = materialSelect.value;
+        updateMaterialSettings(material);
+    }
+
+    function handleSectionChange() {
+        const section = sectionSelect.value;
+        updateSectionSettings(section);
+    }
+
+    materialSelect.addEventListener('change', handleMaterialChange);
+    sectionSelect.addEventListener('change', handleSectionChange);
 });

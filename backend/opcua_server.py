@@ -30,7 +30,7 @@ async def main():
     section_var = await machine.add_variable(idx, "Section", simulator.section, ua.VariantType.String)
     temp_var = await machine.add_variable(idx, "Temperature", simulator.temperature, ua.VariantType.Double)
     alarm_type_var = await machine.add_variable(idx, "AlarmType", simulator.alarm.value, ua.VariantType.String)
-    for var in [state_var, speed_var, feed_rate_var, pieces_var, consumption_var, material_var, section_var, temp_var, alarm_type_var]:
+    for var in [state_var, speed_var, feed_rate_var, pieces_var, consumption_var, material_var, section_var, temp_var,alarm_type_var]:
         await var.set_writable()
 
     print(f"Server OPC-UA avviato all'indirizzo {url}")
@@ -40,13 +40,37 @@ async def main():
             while True:
                 # Gestione aggiornamento stato macchina
                 new_state = await state_var.get_value()
+                new_alarm_type = await alarm_type_var.get_value()
+
                 if new_state != simulator.state.value:
                     try:
                         simulator.state = MachineState(new_state)
                         simulator.last_state_change = datetime.now()
                         print(f"Stato cambiato esternamente a: {new_state}")
+
+                        # Se lo stato cambia in ALARM, assicuriamoci che ci sia un tipo di allarme
+
+                        # if simulator.state == MachineState.ALARM and simulator.alarm == AlarmType.NONE:
+                        #
+                        #
+                        #     simulator.alarm = AlarmType.CONNECTION_ERROR  # default alarm
+                        #
+                        # # Se lo stato non è più ALARM, resettiamo il tipo di allarme
+                        # elif simulator.state != MachineState.ALARM:
+                        #     simulator.alarm = AlarmType.NONE
+
                     except KeyError:
                         print(f"Stato non valido ricevuto: {new_state}")
+
+                # Gestione aggiornamento tipo allarme
+                if new_alarm_type != simulator.alarm.value:
+                    try:
+                        simulator.alarm = AlarmType(new_alarm_type)
+                        # Se viene impostato un allarme diverso da NONE, assicuriamoci che lo stato sia ALARM
+                        if simulator.alarm != AlarmType.NONE:
+                            simulator.state = MachineState.ALARM
+                    except ValueError:
+                        print(f"Tipo di allarme non valido ricevuto: {new_alarm_type}")
 
                 # Aggiornamento materiale e sezione
                 new_material = await material_var.get_value()
