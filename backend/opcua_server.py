@@ -1,7 +1,8 @@
 import asyncio
 from datetime import datetime
 from asyncua import Server, ua
-from backend.bandsaw_simulator import BandSawSimulator, MachineState, calculate_feed_rate, calculate_cutting_speed
+from backend.bandsaw_simulator import BandSawSimulator, MachineState, calculate_feed_rate, calculate_cutting_speed, \
+    AlarmType
 
 
 async def main():
@@ -28,7 +29,7 @@ async def main():
     material_var = await machine.add_variable(idx, "Material", simulator.material, ua.VariantType.String)
     section_var = await machine.add_variable(idx, "Section", simulator.section, ua.VariantType.String)
     temp_var = await machine.add_variable(idx, "Temperature", simulator.temperature, ua.VariantType.Double)
-
+    alarm_type_var = await machine.add_variable(idx, "AlarmType", AlarmType.NONE.value, ua.VariantType.String)
     for var in [state_var, speed_var, feed_rate_var, pieces_var, consumption_var, material_var, section_var, temp_var]:
         await var.set_writable()
 
@@ -41,7 +42,7 @@ async def main():
                 new_state = await state_var.get_value()
                 if new_state != simulator.state.value:
                     try:
-                        simulator.state = MachineState[new_state.upper()]
+                        simulator.state = MachineState(new_state)
                         simulator.last_state_change = datetime.now()
                         print(f"Stato cambiato esternamente a: {new_state}")
                     except KeyError:
@@ -68,6 +69,7 @@ async def main():
                 await material_var.write_value(simulator.material)
                 await section_var.write_value(simulator.section)
                 await temp_var.write_value(simulator.temperature)
+                await alarm_type_var.set_writable()
 
                 await asyncio.sleep(1)
 

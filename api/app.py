@@ -2,7 +2,7 @@
 from flask import Flask, render_template, jsonify, request
 import logging
 from backend.opcua_client import OPCUAClient
-from backend.bandsaw_simulator import materials_data
+from backend.bandsaw_simulator import materials_data, AlarmType, MachineState
 
 app = Flask(__name__,
             static_folder='../frontend/static',
@@ -32,6 +32,10 @@ def get_data():
                 material = await client.get_node_value("ns=2;i=7")
                 section = await client.get_node_value("ns=2;i=8")
                 temperature = await client.get_node_value("ns=2;i=9")
+                alarm_type = await client.get_node_value("ns=2;i=10")
+
+
+
 
                 # Get material data from materials_data dictionary
                 material_info = materials_data.get(material, {})
@@ -46,7 +50,9 @@ def get_data():
                     'material': material,
                     'section': section,
                     'temperature': float(temperature) if temperature is not None else 0,
-                    'tensile_strength': tensile_strength
+                    'tensile_strength': tensile_strength,
+                    'alarm_type': alarm_type if alarm_type is not None else AlarmType.NONE.value
+
                 }
             except Exception as e:
                 print(f"Error fetching data: {e}")
@@ -96,4 +102,37 @@ def set_section():
         return client.run_async(client.set_node_value("ns=2;i=8", section))
 
     success = async_set_section()
+    return jsonify({'success': success})
+
+
+@app.route('/api/set_alarm', methods=['POST'])
+def set_alarm():
+    alarm_type = request.json.get('alarm')
+
+    def async_set_alarm():
+        # Prima imposta lo stato della macchina su "allarme"
+        state_success = client.run_async(
+            client.set_node_value("ns=2;i=2", MachineState.ALARM.value)
+        )
+
+        # TODO: Aggiungere un nodo OPC UA per il tipo di allarme
+        # Per ora ritorniamo solo il successo del cambio di stato
+        return state_success
+
+    success = async_set_alarm()
+    return jsonify({'success': success})
+
+
+@app.route('/api/reset_alarm', methods=['POST'])
+def reset_alarm():
+    def async_reset_alarm():
+        # Riporta la macchina allo stato inattivo
+        state_success = client.run_async(
+            client.set_node_value("ns=2;i=2", MachineState.INACTIVE.value)
+        )
+
+        # TODO: Resettare anche il nodo del tipo di allarme quando verrà aggiunto
+        return state_success
+
+    success = async_reset_alarm()
     return jsonify({'success': success})

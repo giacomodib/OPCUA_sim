@@ -13,6 +13,18 @@
         <div class="row">
             <!-- Control Panel -->
             <div class="col-md-3">
+                <!-- Alarm Status Card -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5>Stato Sistema</h5>
+                        <div id="alarmStatus" class="alert no-alarm mb-2">
+                            Sistema operativo
+                        </div>
+                        <div id="alarmMessage" class="alert alert-danger" style="display: none;">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card mb-3">
                     <div class="card-body">
                         <h5>Controllo Macchina</h5>
@@ -44,19 +56,31 @@
                     </div>
                 </div>
 
+                <!-- Safety and Alarms Card -->
                 <div class="card mb-3">
                     <div class="card-body">
-                        <h5>Gestione Allarmi</h5>
+                        <h5>Sicurezza e Allarmi</h5>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="safetyBarrierToggle">
+                                <label class="form-check-label" for="safetyBarrierToggle">
+                                    Barriere di Protezione
+                                </label>
+                            </div>
+                        </div>
                         <div class="mb-3">
                             <label for="alarmSelect" class="form-label">Tipo di Allarme</label>
                             <select id="alarmSelect" class="form-select">
-                                <option value="nessun allarme">Nessun Allarme</option>
-                                <option value="temperatura alta">Temperatura Alta</option>
-                                <option value="consumo eccessivo">Consumo Eccessivo</option>
-                                <option value="errore sensore">Errore Sensore</option>
+                                <option value="HIGH_TEMPERATURE">Temperatura Elevata</option>
+                                <option value="HIGH_POWER">Consumo Elevato</option>
+                                <option value="SAFETY_BARRIER">Barriere di Protezione</option>
+                                <option value="CONNECTION_ERROR">Errore di Connessione</option>
                             </select>
                         </div>
-                        <button id="setAlarmButton" class="btn btn-danger">Invia Allarme</button>
+                        <div class="d-grid gap-2">
+                            <button id="setAlarmButton" class="btn btn-danger">Simula Allarme</button>
+                            <button id="resetAlarmButton" class="btn btn-success">Reset Allarme</button>
+                        </div>
                     </div>
                 </div>
 
@@ -66,6 +90,7 @@
                         <p><strong>Velocità di taglio:</strong> <span id="cuttingSpeed">0</span> m/min</p>
                         <p><strong>Avanzamento:</strong> <span id="feedRate">0</span> mm/s</p>
                         <p><strong>Numero pezzi:</strong> <span id="pieces">0</span></p>
+                        <p><strong>Resistenza alla trazione:</strong> <span id="tensileStrength">0</span> N/mm²</p>
                     </div>
                 </div>
             </div>
@@ -74,6 +99,14 @@
             <div class="col-md-9">
                 <div class="card">
                     <div class="card-body">
+                        <div class="mb-3">
+                            <label for="chartSelect" class="form-label">Metrica</label>
+                            <select id="chartSelect" class="form-select">
+                                <option value="temperature">Temperatura</option>
+                                <option value="consumption">Consumo Energetico</option>
+                                <option value="pieces">Conteggio Pezzi</option>
+                            </select>
+                        </div>
                         <canvas id="monitorChart"></canvas>
                     </div>
                 </div>
