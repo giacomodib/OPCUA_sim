@@ -9,6 +9,17 @@ class MachineState(Enum):
     ERROR = "errore"
     ALARM = "allarme"
     PAUSED = "in pausa"
+    EMERGENCY_STOP = "arresto emergenza"
+
+
+class AlarmType(Enum):
+    NONE = "nessun allarme"
+    HIGH_TEMPERATURE = "temperatura elevata"
+    SAFETY_BARRIER = "barriera di sicurezza"
+    BLADE_BREAK = "rottura lama"
+    COMMUNICATION_ERROR = "errore comunicazione"
+    LOW_COOLANT = "livello refrigerante basso"
+    MOTOR_OVERLOAD = "sovraccarico motore"
 
 
 materials_data = {
