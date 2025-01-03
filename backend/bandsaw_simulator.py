@@ -113,6 +113,7 @@ def calculate_power(material, cutting_speed, feed_rate):
 # Simulatore della sega a nastro
 class BandSawSimulator:
     def __init__(self):
+        self.alarm = AlarmType.NONE
         self.state = MachineState.INACTIVE
         self.pieces = 0
         self.next_pause_at = 15

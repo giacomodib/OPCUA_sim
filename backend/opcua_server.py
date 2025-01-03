@@ -29,8 +29,8 @@ async def main():
     material_var = await machine.add_variable(idx, "Material", simulator.material, ua.VariantType.String)
     section_var = await machine.add_variable(idx, "Section", simulator.section, ua.VariantType.String)
     temp_var = await machine.add_variable(idx, "Temperature", simulator.temperature, ua.VariantType.Double)
-    alarm_type_var = await machine.add_variable(idx, "AlarmType", AlarmType.NONE.value, ua.VariantType.String)
-    for var in [state_var, speed_var, feed_rate_var, pieces_var, consumption_var, material_var, section_var, temp_var]:
+    alarm_type_var = await machine.add_variable(idx, "AlarmType", simulator.alarm.value, ua.VariantType.String)
+    for var in [state_var, speed_var, feed_rate_var, pieces_var, consumption_var, material_var, section_var, temp_var,alarm_type_var]:
         await var.set_writable()
 
     print(f"Server OPC-UA avviato all'indirizzo {url}")
@@ -69,7 +69,7 @@ async def main():
                 await material_var.write_value(simulator.material)
                 await section_var.write_value(simulator.section)
                 await temp_var.write_value(simulator.temperature)
-                await alarm_type_var.set_writable()
+                await alarm_type_var.write_value(simulator.alarm.value)
 
                 await asyncio.sleep(1)
 

@@ -116,8 +116,8 @@ def set_alarm():
         )
 
         # TODO: Aggiungere un nodo OPC UA per il tipo di allarme
-        # Per ora ritorniamo solo il successo del cambio di stato
-        return state_success
+        def async_set_alarm():
+            return client.set_node_value("ns=2;i=10", AlarmType.HIGH_TEMPERATURE.value)
 
     success = async_set_alarm()
     return jsonify({'success': success})
