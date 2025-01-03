@@ -2,7 +2,6 @@ from enum import Enum
 import random
 from datetime import datetime
 
-# Enum per gli stati della macchina
 class MachineState(Enum):
     INACTIVE = "inattiva"
     RUNNING = "in funzione"
@@ -11,7 +10,6 @@ class MachineState(Enum):
     PAUSED = "in pausa"
     EMERGENCY_STOP = "arresto emergenza"
 
-# Enum per i tipi di allarmi
 class AlarmType(Enum):
     NONE = "nessun allarme"
     HIGH_TEMPERATURE = "temperatura elevata"
@@ -21,7 +19,6 @@ class AlarmType(Enum):
     LOW_COOLANT = "livello refrigerante basso"
     MOTOR_OVERLOAD = "sovraccarico motore"
 
-# Dati dei materiali
 materials_data = {
     "Acciai al carbonio St 37/42": {
         "tensile_strength": 400,
@@ -79,8 +76,6 @@ materials_data = {
         }
     }
 }
-
-# Funzioni di calcolo
 
 def calculate_cutting_speed(material, section):
     if material in materials_data and section in materials_data[material]["cutting_speeds"]:
@@ -144,10 +139,12 @@ class BandSawSimulator:
 
             # limite superiore alla temp = 700° C
             self.temperature = min(700, self.temperature + temp_increase)
+            print(f"Temperature increased: {self.temperature}")  # Debugging
 
         else:
             cooling_rate = 0.4 if self.temperature > self.TEMP_WARNING else 0.2
             self.temperature = max(20.0, self.temperature - random.uniform(0.2, cooling_rate))
+            print(f"Temperature decreased: {self.temperature}")  # Debugging
 
     def update_consumption(self):
         if self.state == MachineState.RUNNING:
@@ -156,6 +153,7 @@ class BandSawSimulator:
             if self.temperature > self.TEMP_WARNING:
                 temp_factor = 1 + ((self.temperature - self.TEMP_WARNING) / 250)
                 self.consumption *= temp_factor
+            print(f"Power consumption: {self.consumption}")  # Debugging
         else:
             base_consumption = {
                 MachineState.INACTIVE: (700, 800),
@@ -188,16 +186,45 @@ class BandSawSimulator:
         self.update_consumption()
 
     def high_temperature_alarm(self):
+        print(f"High temperature check: {self.temperature > self.TEMP_CRITICAL}")  # Debugging
         return self.temperature > self.TEMP_CRITICAL
 
     def low_coolant_alarm(self):
+        print(f"Low coolant check: {self.temperature < self.TEMP_NORMAL_MIN}")  # Debugging
         return self.temperature < self.TEMP_NORMAL_MIN
 
     def communication_error_alarm(self):
-        return random.random() < self.error_probability
+        check = random.random() < self.error_probability
+        print(f"Communication error check: {check}")  # Debugging
+        return check
 
     def blade_break_error(self):
-        return random.random() < 0.005
+        check = random.random() < 0.005
+        print(f"Blade break check: {check}")  # Debugging
+        return check
 
     def motor_overload(self):
-        return self.consumption > self.MAX_POWER
+        check = self.consumption > self.MAX_POWER
+        print(f"Motor overload check: {check}")  # Debugging
+        return check
+
+    def check_alarm(self):
+        if self.high_temperature_alarm():
+            self.alarm = AlarmType.HIGH_TEMPERATURE
+        elif self.low_coolant_alarm():
+            self.alarm = AlarmType.LOW_COOLANT
+        elif self.communication_error_alarm():
+            self.alarm = AlarmType.COMMUNICATION_ERROR
+        elif self.blade_break_error():
+            self.alarm = AlarmType.BLADE_BREAK
+        elif self.motor_overload():
+            self.alarm = AlarmType.MOTOR_OVERLOAD
+        else:
+            self.alarm = AlarmType.NONE
+
+        if self.alarm != AlarmType.NONE:
+            self.state = MachineState.ALARM
+        else:
+            self.state = MachineState.RUNNING
+
+        print(f"Alarm status: {self.alarm.value}")  # Debugging

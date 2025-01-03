@@ -1,14 +1,14 @@
-# app.py
 from flask import Flask, render_template, jsonify, request
 import logging
 from backend.opcua_client import OPCUAClient
-from backend.bandsaw_simulator import materials_data, AlarmType, MachineState
+from backend.bandsaw_simulator import materials_data, AlarmType, MachineState, BandSawSimulator
 
 app = Flask(__name__,
             static_folder='../frontend/static',
             template_folder='../frontend/templates')
 
 client = OPCUAClient()
+simulator = BandSawSimulator()
 
 # Configura il logging
 log = logging.getLogger('werkzeug')
@@ -34,9 +34,6 @@ def get_data():
                 temperature = await client.get_node_value("ns=2;i=9")
                 alarm_type = await client.get_node_value("ns=2;i=10")
 
-
-
-
                 # Get material data from materials_data dictionary
                 material_info = materials_data.get(material, {})
                 tensile_strength = material_info.get('tensile_strength', 0)
@@ -51,8 +48,7 @@ def get_data():
                     'section': section,
                     'temperature': float(temperature) if temperature is not None else 0,
                     'tensile_strength': tensile_strength,
-                    'alarm_type': alarm_type if alarm_type is not None else AlarmType.NONE.value
-
+                    'alarm_type': alarm_type
                 }
             except Exception as e:
                 print(f"Error fetching data: {e}")
@@ -115,9 +111,22 @@ def set_alarm():
             client.set_node_value("ns=2;i=2", MachineState.ALARM.value)
         )
 
-        # TODO: Aggiungere un nodo OPC UA per il tipo di allarme
-        def async_set_alarm():
-            return client.set_node_value("ns=2;i=10", AlarmType.HIGH_TEMPERATURE.value)
+        # Determina il tipo di allarme basato sullo stato attuale della macchina
+        if simulator.high_temperature_alarm():
+            alarm_type = AlarmType.HIGH_TEMPERATURE
+        elif simulator.low_coolant_alarm():
+            alarm_type = AlarmType.LOW_COOLANT
+        elif simulator.communication_error_alarm():
+            alarm_type = AlarmType.COMMUNICATION_ERROR
+        elif simulator.blade_break_error():
+            alarm_type = AlarmType.BLADE_BREAK
+        elif simulator.motor_overload():
+            alarm_type = AlarmType.MOTOR_OVERLOAD
+        else:
+            alarm_type = AlarmType.NONE
+
+        # Imposta il tipo di allarme
+        return client.set_node_value("ns=2;i=10", alarm_type.value)
 
     success = async_set_alarm()
     return jsonify({'success': success})
@@ -131,8 +140,9 @@ def reset_alarm():
             client.set_node_value("ns=2;i=2", MachineState.INACTIVE.value)
         )
 
-        # TODO: Resettare anche il nodo del tipo di allarme quando verrà aggiunto
-        return state_success
+        # Reset del tipo di allarme
+        return client.run_async(client.set_node_value("ns=2;i=10", AlarmType.NONE.value))
 
     success = async_reset_alarm()
     return jsonify({'success': success})
+

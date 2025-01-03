@@ -1,7 +1,8 @@
 let chart;
 let selectedMetric = 'temperature';
 const maxDataPoints = 60;
-let data = {
+
+const data = {
     labels: [],
     datasets: [{
         label: 'Temperature (°C)',
@@ -29,7 +30,7 @@ function initChart() {
 }
 
 function updateChart(newValue) {
-    if (chart === undefined) return;
+    if (!chart) return;
 
     const now = new Date();
     data.labels.push(now.toLocaleTimeString());
@@ -40,27 +41,27 @@ function updateChart(newValue) {
         data.datasets[0].data.shift();
     }
 
-    chart.update('none');
+    chart.update();
 }
 
-function updateMaterialInfo(data) {
-    document.getElementById('tensileStrength').textContent = data.tensile_strength || '0';
-    document.getElementById('cuttingSpeed').textContent = data.cutting_speed?.toFixed(1) || '0';
-    document.getElementById('feedRate').textContent = data.feed_rate?.toFixed(3) || '0';
-    document.getElementById('pieces').textContent = data.pieces || '0';
+function updateMaterialInfo(materialData) {
+    document.getElementById('tensileStrength').textContent = materialData.tensile_strength || '0';
+    document.getElementById('cuttingSpeed').textContent = materialData.cutting_speed?.toFixed(1) || '0';
+    document.getElementById('feedRate').textContent = materialData.feed_rate?.toFixed(3) || '0';
+    document.getElementById('pieces').textContent = materialData.pieces || '0';
 }
 
-function updateAlarmStatus(data) {
+function updateAlarmStatus(machineData) {
     const alarmStatusElement = document.getElementById('alarmStatus');
     const alarmMessageElement = document.getElementById('alarmMessage');
 
-    if (data.state === 'allarme') {
+    if (machineData.state === 'allarme') {
         alarmStatusElement.className = 'alarm-active';
-        alarmMessageElement.textContent = `Allarme: ${data.alarm_type || 'Sconosciuto'}`;
+        alarmMessageElement.textContent = `Allarme: ${machineData.alarm_type || 'Sconosciuto'}`;
         alarmMessageElement.style.display = 'block';
-    } else if (data.state === 'errore') {
+    } else if (machineData.state === 'errore') {
         alarmStatusElement.className = 'error-active';
-        alarmMessageElement.textContent = `Errore: ${data.alarm_type || 'Sconosciuto'}`;
+        alarmMessageElement.textContent = `Errore: ${machineData.alarm_type || 'Sconosciuto'}`;
         alarmMessageElement.style.display = 'block';
     } else {
         alarmStatusElement.className = 'no-alarm';
@@ -84,54 +85,31 @@ function fetchData() {
         .catch(error => console.error('Error fetching data:', error));
 }
 
-function updateMaterialSettings(material) {
-    fetch('/api/set_material', {
+function sendPostRequest(url, requestBody) {
+    fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-            material: material
-        })
+        body: JSON.stringify(requestBody)
     })
-    .catch(error => console.error('Error setting material:', error));
+    .catch(error => console.error('Error sending data to ' + url, error));
+}
+
+function updateMaterialSettings(material) {
+    sendPostRequest('/api/set_material', { material });
 }
 
 function updateSectionSettings(section) {
-    fetch('/api/set_section', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            section: section
-        })
-    })
-    .catch(error => console.error('Error setting section:', error));
+    sendPostRequest('/api/set_section', { section });
 }
 
 function setAlarm(alarmType) {
-    fetch('/api/set_alarm', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            alarm: alarmType
-        })
-    })
-    .catch(error => console.error('Error setting alarm:', error));
+    sendPostRequest('/api/set_alarm', { alarm: alarmType });
 }
 
 function resetAlarm() {
-    fetch('/api/reset_alarm', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({})
-    })
-    .catch(error => console.error('Error resetting alarm:', error));
+    sendPostRequest('/api/reset_alarm', {});
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -158,19 +136,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.getElementById('stateSelect').addEventListener('change', function(e) {
-        fetch('/api/set_state', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                state: e.target.value
-            })
-        })
-        .catch(error => console.error('Error setting state:', error));
+        sendPostRequest('/api/set_state', { state: e.target.value });
     });
 
-    // Gestione degli allarmi
+    // Allarmi
     document.getElementById('setAlarmButton')?.addEventListener('click', function() {
         const alarmType = document.getElementById('alarmSelect').value;
         setAlarm(alarmType);
@@ -180,32 +149,17 @@ document.addEventListener('DOMContentLoaded', function() {
         resetAlarm();
     });
 
+    // Safety barrier toggle
     document.getElementById('safetyBarrierToggle')?.addEventListener('change', function(e) {
-        fetch('/api/set_safety_barrier', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                is_open: e.target.checked
-            })
-        })
-        .catch(error => console.error('Error toggling safety barrier:', error));
+        sendPostRequest('/api/set_safety_barrier', { is_open: e.target.checked });
     });
 
-    const materialSelect = document.getElementById('materialSelect');
-    const sectionSelect = document.getElementById('sectionSelect');
+    // Material and Section Change Events
+    document.getElementById('materialSelect')?.addEventListener('change', function() {
+        updateMaterialSettings(this.value);
+    });
 
-    function handleMaterialChange() {
-        const material = materialSelect.value;
-        updateMaterialSettings(material);
-    }
-
-    function handleSectionChange() {
-        const section = sectionSelect.value;
-        updateSectionSettings(section);
-    }
-
-    materialSelect.addEventListener('change', handleMaterialChange);
-    sectionSelect.addEventListener('change', handleSectionChange);
+    document.getElementById('sectionSelect')?.addEventListener('change', function() {
+        updateSectionSettings(this.value);
+    });
 });
